@@ -64,6 +64,7 @@ Model modelEclipseRearWheels;
 Model modelEclipseFrontalWheels;
 Model modelHeliChasis;
 Model modelHeliHeli;
+Model modelHeliRear;
 Model modelLambo;
 Model modelLamboLeftDor;
 Model modelLamboRightDor;
@@ -252,6 +253,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelHeliChasis.setShader(&shaderMulLighting);
 	modelHeliHeli.loadModel("../models/Helicopter/Mi_24_heli.obj");
 	modelHeliHeli.setShader(&shaderMulLighting);
+	//Se agrega la helice de atrás y su shader
+	modelHeliRear.loadModel("../models/Helicopter/Mi_24_heli_back.obj");
+	modelHeliRear.setShader(&shaderMulLighting);
 	// Lamborginhi
 	modelLambo.loadModel("../models/Lamborginhi_Aventador_OBJ/Lamborghini_Aventador_chasis.obj");
 	modelLambo.setShader(&shaderMulLighting);
@@ -485,6 +489,7 @@ void destroy() {
 	modelEclipseRearWheels.destroy();
 	modelHeliChasis.destroy();
 	modelHeliHeli.destroy();
+	modelHeliRear.destroy();
 	modelLambo.destroy();
 	modelLamboFrontLeftWheel.destroy();
 	modelLamboFrontRightWheel.destroy();
@@ -493,6 +498,7 @@ void destroy() {
 	modelLamboRearRightWheel.destroy();
 	modelLamboRightDor.destroy();
 	modelRock.destroy();
+
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -672,6 +678,10 @@ void applicationLoop() {
 	float rotWheelsY = 0.0;
 	int numberAdvance = 0;
 	int maxAdvance = 0.0;
+	//Determinamos la velocidad con la que se va a avanzar
+	const float avanceEclipse = 0.3;
+	//Definimos la velocidad con la que se rota
+	const float rotEclipse = 0.3;
 
 	matrixModelRock = glm::translate(matrixModelRock, glm::vec3(-3.0, 0.0, 2.0));
 
@@ -886,9 +896,13 @@ void applicationLoop() {
 		modelEclipseChasis.render(modelMatrixEclipseChasis);
 
 		glm::mat4 modelMatrixFrontalWheels = glm::mat4(modelMatrixEclipseChasis);
+		//Esta línea tiene más jerarquía, se toma primero en la multiplicación de matrices
 		modelMatrixFrontalWheels = glm::translate(modelMatrixFrontalWheels, glm::vec3(0.0, 1.05813, 4.11483 ));
+		//Las llantas rotan sobre sus respectivos ejes. Para que el valor incremente se debe de modificar y establecer
+		//un límite. 
 		modelMatrixFrontalWheels = glm::rotate(modelMatrixFrontalWheels, rotWheelsY, glm::vec3(0, 1, 0));
 		modelMatrixFrontalWheels = glm::rotate(modelMatrixFrontalWheels, rotWheelsX, glm::vec3(1, 0, 0));
+		//Esta se aplica primero al estar más cerca e los vectores
 		modelMatrixFrontalWheels = glm::translate(modelMatrixFrontalWheels, glm::vec3(0.0, -1.05813, -4.11483));
 		modelEclipseFrontalWheels.render(modelMatrixFrontalWheels);
 
@@ -907,6 +921,16 @@ void applicationLoop() {
 		modelMatrixHeliHeli = glm::rotate(modelMatrixHeliHeli, rotHelHelY, glm::vec3(0, 1, 0));
 		modelMatrixHeliHeli = glm::translate(modelMatrixHeliHeli, glm::vec3(0.0, 0.0, 0.249548));
 		modelHeliHeli.render(modelMatrixHeliHeli);
+
+		//Cuando gire se coloca el pibote
+		//Se utiliza en este caso la misma variable para que tengan la mism velocidad de giro
+		glm::mat4 modelMatrixHeliRear = glm::mat4(modelMatrixHeliChasis);
+		//Se coloca la helic trasera en la posicion que le corresponde
+		modelMatrixHeliRear =glm::translate(modelMatrixHeliRear, glm::vec3(0.4085,2.093,-5.649));
+		modelMatrixHeliRear =glm::rotate(modelMatrixHeliRear, rotHelHelY,glm::vec3(1,0,0));
+		//Se coloca la rotación del pivote con sus respectivas coordenadas.
+		modelMatrixHeliRear =glm::translate(modelMatrixHeliRear, glm::vec3(-0.4085,-2.093,5.649));
+		modelHeliRear.render(modelMatrixHeliRear);
 
 		// Lambo car
 		glDisable(GL_CULL_FACE);
@@ -996,6 +1020,86 @@ void applicationLoop() {
 
 		// Constantes de animaciones
 		rotHelHelY += 0.5;
+
+		//Maquinas de estado
+		switch (state)
+		{
+		case 0:
+			if(numberAdvance == 0)
+				maxAdvance =65.0f;
+			else if(numberAdvance == 1)
+				maxAdvance = 49.0f;
+			else if (numberAdvance == 2)
+				maxAdvance = 44.5f;
+			else if (numberAdvance == 3)
+				maxAdvance = 49.0f;
+			else if (numberAdvance == 4)
+				maxAdvance = 44.5f;
+			state = 1;
+			break;
+		
+		case 1:
+			modelMatrixEclipse=glm::translate(modelMatrixEclipse, glm::vec3(0.0,0.0,avanceEclipse));
+			advanceCount+=avanceEclipse;
+			rotWheelsX+=0.025;
+			//Regresamos a la llanta a su posicion
+			rotWheelsY-=0.0025;
+			//Cuando la llanta se endereza hacemos que se detenga
+			if (rotWheelsY<0)
+				rotWheelsY=0.0;
+			if(advanceCount>maxAdvance){
+				advanceCount =0.0;
+				//Se sube de nivel para que avance más
+				numberAdvance++;
+				state=2;				
+				
+				if(advanceCount>4)
+					advanceCount =1;
+					//Deberia ser numberAdvance
+				
+			}
+			break;
+
+		case 2:
+
+			modelMatrixEclipse = glm::translate(modelMatrixEclipse, glm::vec3(0,0,0.025));
+		//Checamos que el eclipse se pueda rotar en base de y, utilizando la variable rotEclipse
+			modelMatrixEclipse = glm::rotate(modelMatrixEclipse,glm::radians(rotEclipse),glm::vec3(0.0f, 1.0f, 0.0f));
+			rotCount+=rotEclipse;
+			rotWheelsY+=0.0025;
+			//Giramos las llantas
+			rotWheelsX +=0.025;
+			if(rotWheelsY>0.25)
+				rotWheelsY=0.25f;
+			//Limitamos la rotacion
+			if(rotCount>90.0){
+				//Al terminar de rotar, se regresa el valor a 0 para poder realizar el giro nuevamente
+				rotCount = 0;
+				state = 0;
+
+			}
+			break;
+		default:
+			break;
+		}
+//Se utiliza para que se pueda abrir y cerrar la puerta
+		switch (stateDoor)
+		{
+		case 0:
+			dorRotCount++;
+			if(dorRotCount>75.0f)
+				stateDoor=1;
+			break;
+		
+		case 1:
+			dorRotCount--;
+			if(dorRotCount<0.0f)
+				stateDoor=0;
+			break;
+		
+		default:
+			break;
+		}
 
 		glfwSwapBuffers(window);
 	}
