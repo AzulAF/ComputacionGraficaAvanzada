@@ -82,7 +82,12 @@ Model modelDartLegoLeftHand;
 Model modelDartLegoRightHand;
 Model modelDartLegoLeftLeg;
 Model modelDartLegoRightLeg;
-
+//Model mayow
+Model modelMayow;
+//Model bob, requiere un plugging con un mesh
+Model modelBob;
+Model modelCowboy;
+Model modelCyborg;
 // Buzz
 Model modelBuzzTorso;
 Model modelBuzzHead;
@@ -332,6 +337,20 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelBuzzLeftHand.loadModel("../models/buzz/buzzlightyLeftHand.obj");
 	modelBuzzLeftHand.setShader(&shaderMulLighting);
 
+	//Modelo mayow, bob, cowboy, cyborg
+	//Cowboy
+	modelCowboy.loadModel("../models/cowboy/Charcter Running.fbx");
+	modelCowboy.setShader(&shaderMulLighting);
+	//Mayow
+	modelMayow.loadModel("../models/mayow/personaje2.fbx");
+	modelMayow.setShader(&shaderMulLighting);
+	//Bob
+	modelBob.loadModel("../models/boblampclean/boblampclean.md5anim");
+	modelBob.setShader(&shaderMulLighting);
+	//Cyborg
+	modelCyborg.loadModel("../models/cyborg.fbx");
+	modelCyborg.setShader(&shaderMulLighting);
+	//
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
 	// Carga de texturas para el skybox
