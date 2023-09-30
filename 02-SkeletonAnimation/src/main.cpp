@@ -84,6 +84,8 @@ Model modelDartLegoLeftLeg;
 Model modelDartLegoRightLeg;
 //Model mayow
 Model modelMayow;
+//Model cat
+Model modelCatAnimated;
 //Model bob, requiere un plugging con un mesh
 Model modelBob;
 Model modelCowboy;
@@ -105,13 +107,20 @@ GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
-
+/*
 std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
 		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
 		"../Textures/mp_bloodvalley/blood-valley_up.tga",
 		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
 		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
 		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+*/
+std::string fileNames[6] = { "../Textures/mountain-skyboxes/Maskonaive2/negx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negz.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posz.jpg" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -125,7 +134,9 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixBuzz = glm::mat4(1.0f);
+glm::mat4 modelMatrixCat = glm::mat4(1.0f);
 
+int animationCatIndex = 4;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
@@ -337,7 +348,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelBuzzLeftHand.loadModel("../models/buzz/buzzlightyLeftHand.obj");
 	modelBuzzLeftHand.setShader(&shaderMulLighting);
 
-	//Modelo mayow, bob, cowboy, cyborg
+	//Modelo mayow, bob, cowboy, cyborg, cat
 	//Cowboy
 	modelCowboy.loadModel("../models/cowboy/Charcter Running.fbx");
 	modelCowboy.setShader(&shaderMulLighting);
@@ -350,6 +361,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	//Cyborg
 	modelCyborg.loadModel("../models/cyborg.fbx");
 	modelCyborg.setShader(&shaderMulLighting);
+	//Cat
+	modelCatAnimated.loadModel("../models/cat/cat.fbx");
+	modelCatAnimated.setShader(&shaderMulLighting);
 	//
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
@@ -563,6 +577,9 @@ void destroy() {
 	modelBuzzLeftHand.destroy();
 	modelBuzzTorso.destroy();
 
+	//Cat
+	modelCatAnimated.destroy();
+
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDeleteTextures(1, &textureCespedID);
@@ -623,7 +640,7 @@ bool processInput(bool continueApplication) {
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera->moveFrontCamera(true, deltaTime);
+		camera->moveFrontCamera(true, deltaTime+0.03);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera->moveFrontCamera(false, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
@@ -767,6 +784,40 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 		modelMatrixBuzz = glm::translate(modelMatrixBuzz, glm::vec3(0.0, 0.0, -0.02));
 
+	//Cat controls walk
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.003));
+		animationCatIndex = 6;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.003));
+		animationCatIndex = 6;
+	}
+	//Cat controls run
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.04));
+		animationCatIndex = 5;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.04));
+		animationCatIndex = 5;
+	}
+
+	
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -795,6 +846,10 @@ void applicationLoop() {
 	modelMatrixDart = glm::translate(modelMatrixDart, glm::vec3(3.0, 0.0, 20.0));
 
 	modelMatrixBuzz = glm::translate(modelMatrixBuzz, glm::vec3(15.0, 0.0, -10.0));
+
+	//CAT coordinates
+	modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(3.0f, 0.00f, 30.0f));
+	//modelMatrixCat = glm::rotate(modelMatrixCat, glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -846,7 +901,7 @@ void applicationLoop() {
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
@@ -1130,6 +1185,30 @@ void applicationLoop() {
 		modelMatrixLeftHand = glm::rotate(modelMatrixLeftHand, glm::radians(-45.0f), glm::vec3(0, 1, 0));
 		modelMatrixLeftHand = glm::translate(modelMatrixLeftHand, glm::vec3(-0.416066, -0.587046, -0.076258));
 		modelBuzzLeftHand.render(modelMatrixLeftHand);
+
+		//CAT
+		//Movimiento de huesos
+
+		//modelMatrixCat[3][1] = terrain.getHeightTerrain(modelMatrixCat[3][0],modelMatrixCat[3][2]);
+		//glm::vec3 ejey = glm::normalize(terrain.getNormalTerrain(modelMatrixCat[3][0],modelMatrixCat[3][2])); //se obtienen normales en las coordendas "x" y "z"
+		//Para evitar problemas lo normalizamos ^ . Cat se mueve sobre z:
+		//glm::vec3 ejez = glm::normalize(modelMatrixCat[2]);
+		//Se hace un producto cruz etre el eje y y el eje z. Todos deben de ser perpendiculare entre si o se deforma el objeto
+		//glm::vec3 ejex = glm::normalize(glm::cross(ejey,ejez));
+		//ejez = glm::normalize(glm::cross(ejex, ejey));
+		//modelMatrixCat[0] = glm::vec4(ejex,0.00);
+		//modelMatrixCat[1] = glm::vec4(ejey,0.00);
+		//modelMatrixCat[2] = glm::vec4(ejez,0.00);
+
+		glm::mat4 modelMatrixCatBody = glm::mat4(modelMatrixCat);
+		modelMatrixCatBody = glm::scale(modelMatrixCatBody, glm::vec3(0.0005f));
+		modelCatAnimated.setAnimationIndex(animationCatIndex);
+		modelCatAnimated.render(modelMatrixCatBody);
+		animationCatIndex = 4;
+
+
+
+
 
 		/*******************************************
 		 * Skybox
