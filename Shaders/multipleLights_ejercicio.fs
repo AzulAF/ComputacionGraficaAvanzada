@@ -6,13 +6,11 @@ struct Light {
     vec3 specular;
 };
 
-//Como un sol
 struct  DirectionalLight{
     vec3 direction;
     Light light;
 };
 
-//Como si fuera un foco
 struct  PointLight{
     vec3 position;
     
@@ -23,7 +21,6 @@ struct  PointLight{
     float quadratic;
 };
 
-//Como una linterna, tambien puede funcionar como un point light
 struct  SpotLight{
 	vec3 position;
 	vec3 direction;
@@ -38,7 +35,7 @@ struct  SpotLight{
     float quadratic;
 
 };
-//Maximo numero de luces
+
 const int MAX_POINT_LIGHTS = 20;
 const int MAX_SPOT_LIGHTS = 1;
 
@@ -55,53 +52,29 @@ uniform DirectionalLight directionalLight;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
-uniform vec3 viewPos;
-  
-uniform vec2 scaleUV;  
-
-uniform sampler2D backgroundTexture;
-uniform sampler2D textureR; //definir textura asociada al color rojo
-uniform sampler2D textureG; //definir textura asociada al color verde
-uniform sampler2D textureB; //definir textura asociada al color azul
-uniform sampler2D textureBlendMap; //textura definida en 4 colores primarios
-
-
+uniform vec3 viewPos;  
+uniform sampler2D texture1;
+uniform sampler2D texture2;
 
 vec3 calculateDirectionalLight(Light light, vec3 direction){
-	vec2 tiledCoords = our_uv;
-	if(tiledCoords.x != 0 && tiledCoords.y != 0)
-		tiledCoords = scaleUV * tiledCoords;
-
-	//parametro 1: Textura a utilizar
-	//p2: coordenadas de textura
-	vec4 blendMapColor = texture(textureBlendMap, our_uv);
-	float cantidadColorBlendMap = 1 - (blendMapColor.r + blendMapColor.g + blendMapColor.b);
-	//Se multiplica para poder calcular el peo correcto del colo (en este caso, se utilizará en el pasto).
-	vec4 colorTextureBackground = texture(backgroundTexture, tiledCoords) * cantidadColorBlendMap;
-	vec4 colorTextureR = texture(textureR, tiledCoords) * blendMapColor.r;
-	vec4 colorTextureG = texture(textureG, tiledCoords) * blendMapColor.g;
-	vec4 colorTextureB = texture(textureB, tiledCoords) * blendMapColor.b;
-	vec3 totalColor = colorTextureBackground + colorTextureR + colorTextureG + colorTextureB;
-
-
-	//vec4 backgroundTextureColor = texture(backgroundTexture, tiledCoords);
-	//vec4 totalColor = backgroundTextureColor;
-
+    vec4 textura1=texture(texture1, our_uv);
+    vec4 textura2=texture(texture2, our_uv);
+    vec4 textureFinal = mix(textura1,textura2, 1.0);
 	// Ambient
-    vec3 ambient  = light.ambient * vec3(totalColor);
+    vec3 ambient  = light.ambient * vec3(textureFinal);
   	
     // Diffuse 
     vec3 normal = normalize(our_normal);
     vec3 lightDir = normalize(-direction);
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse  = light.diffuse * (diff * vec3(totalColor));
+    vec3 diffuse  = light.diffuse * (diff * vec3(textureFinal));
     
     // Specular
     float specularStrength = 0.5f;
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = light.specular * (spec * vec3(totalColor));  
+    vec3 specular = light.specular * (spec * vec3(textureFinal));  
         
     return (ambient + diffuse + specular);
 }
@@ -133,5 +106,9 @@ vec3 calculateSpotLights(){
 
 void main()
 {
-    color = vec4(calculateDirectionalLight(directionalLight.light, directionalLight.direction) + calculatePointLights() + calculateSpotLights(), 1.0);
+    //Usamos mix para poder hacer la interpolación entre dos texturs (text1, text2 y factor de interpolación)
+	vec4 colorText = texture(texture1, our_uv);
+	if(colorText.a < 0.1)
+		discard;
+    color = vec4(calculateDirectionalLight(directionalLight.light, directionalLight.direction) + calculatePointLights() + calculateSpotLights(), colorText.a);
 }

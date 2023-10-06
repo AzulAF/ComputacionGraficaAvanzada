@@ -33,7 +33,7 @@
 // Include loader Model class
 #include "Headers/Model.h"
 
-//Include del terreno
+// Include del terreno
 #include "Headers/Terrain.h"
 
 #include "Headers/AnimationUtils.h"
@@ -95,16 +95,18 @@ Model modelBuzzLeftHand;
 // Modelos animados
 // Mayow
 Model mayowModelAnimate;
+//Model cat
+Model modelCatAnimated;
 // Cowboy
 Model cowboyModelAnimate;
 // Guardian con lampara
 Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
-//Terrain
-//Posicionx, posicionz, tamaño, altura maxima para ponderar, direccion del archivo
-Terrain terrain(-1,-1, 200, 10, "../Textures/terrain.png");
 
+// Terrain
+// (posición mapa, posición mapa, tamaño, máx. ponderación altura, mapa de alturas)
+Terrain terrain(-1, -1, 200, 64, "../Textures/myTerrain.png");
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
@@ -127,6 +129,7 @@ std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
+bool LamboFlag = false;
 
 // Model matrix definitions
 glm::mat4 modelMatrixEclipse = glm::mat4(1.0f);
@@ -140,8 +143,10 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCat = glm::mat4(1.0f);
 
 int animationMayowIndex = 1;
+int animationCatIndex = 4;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
@@ -369,7 +374,11 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cyborgModelAnimate.loadModel("../models/cyborg/cyborg.fbx");
 	cyborgModelAnimate.setShader(&shaderMulLighting);
 
-	//Terrain
+	//Model cat
+	modelCatAnimated.loadModel("../models/cat/cat.fbx");
+	modelCatAnimated.setShader(&shaderMulLighting);
+	
+	// Terrain init
 	terrain.init();
 	terrain.setShader(&shaderMulLighting);
 
@@ -589,6 +598,10 @@ void destroy() {
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
 	terrain.destroy();
+	
+	//Cat
+	modelCatAnimated.destroy();
+
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDeleteTextures(1, &textureCespedID);
@@ -649,7 +662,7 @@ bool processInput(bool continueApplication) {
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera->moveFrontCamera(true, deltaTime+0.05);
+		camera->moveFrontCamera(true, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera->moveFrontCamera(false, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
@@ -810,6 +823,42 @@ bool processInput(bool continueApplication) {
 		animationMayowIndex = 0;
 	}
 
+	//Cat controls walk
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.003));
+		animationCatIndex = 6;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.003));
+		animationCatIndex = 6;
+	}
+	//Cat controls run
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.04));
+		animationCatIndex = 5;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.04));
+		animationCatIndex = 5;
+	}
+	//Iniciar movimientos del lambo ctrl + 8
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
+		LamboFlag = true;
+
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -834,6 +883,18 @@ void applicationLoop() {
 	modelMatrixAircraft = glm::translate(modelMatrixAircraft, glm::vec3(10.0, 2.0, -17.5));
 
 	modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(23.0, 0.0, 0.0));
+	//Vriables para el movimiento
+	int stateLambo =0;
+	float advanceCountLambo = 0.0;
+	float rotCountLambo = 0.0;
+	float rotWheelsXLambo = 0.0;
+	float rotWheelsYLambo = 0.0;
+	int numberAdvanceLambo = 0;
+	int maxAdvanceLambo = 0.0;
+	const float turn180 = 180;
+	const float turn90 = 90;
+	float avanceLambo = 0.2;
+	float rotLambo = 0.5;
 
 	modelMatrixDart = glm::translate(modelMatrixDart, glm::vec3(3.0, 0.0, 20.0));
 
@@ -848,6 +909,10 @@ void applicationLoop() {
 	modelMatrixGuardian = glm::rotate(modelMatrixGuardian, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
+
+	//CAT coordinates
+	modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(3.0f, 0.00f, 30.0f));
+	//modelMatrixCat = glm::rotate(modelMatrixCat, glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -899,7 +964,7 @@ void applicationLoop() {
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
@@ -914,11 +979,10 @@ void applicationLoop() {
 		 *******************************************/
 		shaderMulLighting.setInt("pointLightCount", 0);
 
-
+		
 		/*******************************************
 		 * Cesped
-		 *******************************************/
-		/*
+		 *******************************************//*
 		glm::mat4 modelCesped = glm::mat4(1.0);
 		modelCesped = glm::translate(modelCesped, glm::vec3(0.0, 0.0, 0.0));
 		modelCesped = glm::scale(modelCesped, glm::vec3(200.0, 0.001, 200.0));
@@ -930,16 +994,18 @@ void applicationLoop() {
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(0, 0)));
 		glBindTexture(GL_TEXTURE_2D, 0);
 		*/
-		//Render del terreno
+
+		// Terrain render
 		glBindTexture(GL_TEXTURE_2D, textureCespedID);
-		glActiveTexture(GL_TEXTURE0); //puede variar de 0 a 32
-		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(200.0f))); //Scale UVS
-		//Nos permite ver el wiremode
+		glActiveTexture(GL_TEXTURE0);
+		shaderMulLighting.setVectorFloat2("scaleUV",glm::value_ptr(glm::vec2(200.0f)));
 		//terrain.enableWireMode();
 		terrain.setPosition(glm::vec3(100.0f, 0.0f, 100.0f));
 		terrain.render();
-		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(1.0f))); //Scale UVS
-		glBindTexture(GL_TEXTURE0, 0);
+		//El shader se tiene que regresar porque los otros modelos también lo ocupan
+		shaderMulLighting.setVectorFloat2("scaleUV",glm::value_ptr(glm::vec2(1.0f)));
+		glBindTexture(GL_TEXTURE_2D, 0); // -> para que no se quede cargada la textura
+
 		/*******************************************
 		 * Custom objects obj
 		 *******************************************/
@@ -988,18 +1054,148 @@ void applicationLoop() {
 		glDisable(GL_CULL_FACE);
 		glm::mat4 modelMatrixLamboChasis = glm::mat4(modelMatrixLambo);
 		modelMatrixLamboChasis = glm::scale(modelMatrixLamboChasis, glm::vec3(1.3, 1.3, 1.3));
+
+
+
+
+		//SECCION POR LLANTA DE MOVIMIENTO
+		//SECCION ORIGINAL CON CHASIS UNICAMENTE
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboChasis[3][1]=terrain.getHeightTerrain(modelMatrixLamboChasis[3][0],modelMatrixLamboChasis[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLambo = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboChasis[3][0], modelMatrixLamboChasis[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLambo = glm::normalize(modelMatrixLamboChasis[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLambo = glm::normalize(glm::cross(ejeyLambo, ejezLambo)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLambo = glm::normalize(glm::cross(ejexLambo, ejeyLambo));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboChasis[0] = glm::vec4(ejexLambo, 0.0);
+		modelMatrixLamboChasis[1] = glm::vec4(ejeyLambo, 0.0);
+		modelMatrixLamboChasis[2] = glm::vec4(ejezLambo, 0.0);
+
 		modelLambo.render(modelMatrixLamboChasis);
 		glActiveTexture(GL_TEXTURE0);
+		//Matrices para las 4 llantas pegadas al chasis
+		glm::mat4 modelMatrixLamboFrontLeftWheel = glm::mat4(modelMatrixLamboChasis);
+		glm::mat4 modelMatrixLamboFrontRightWheel = glm::mat4(modelMatrixLamboChasis);
+		glm::mat4 modelMatrixLamboRearLeftWheel = glm::mat4(modelMatrixLamboChasis);
+		glm::mat4 modelMatrixLamboRearRightWheel = glm::mat4(modelMatrixLamboChasis);
+		//Transformaciones para cada pivote  
+		
+		//Rueda izquierda delantera
+		modelMatrixLamboFrontLeftWheel = glm::translate(modelMatrixLamboFrontLeftWheel, glm::vec3(0.93, 0.3791, 1.399));
+		//modelMatrixLamboFrontLeftWheel = glm::rotate(modelMatrixLamboFrontLeftWheel, rotWheelsYLambo, glm::vec3(0, 1, 0));
+		//modelMatrixLamboFrontLeftWheel = glm::rotate(modelMatrixLamboFrontLeftWheel, rotWheelsXLambo, glm::vec3(1, 0, 0));
+		modelMatrixLamboFrontLeftWheel = glm::translate(modelMatrixLamboFrontLeftWheel, glm::vec3(-0.93, -0.3791, -1.399));
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboFrontLeftWheel[3][1]=terrain.getHeightTerrain(modelMatrixLamboFrontLeftWheel[3][0],modelMatrixLamboFrontLeftWheel[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLamboFrontLeftWheel = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboFrontLeftWheel[3][0], modelMatrixLamboFrontLeftWheel[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLamboFrontLeftWheel = glm::normalize(modelMatrixLamboFrontLeftWheel[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLamboFrontLeftWheel = glm::normalize(glm::cross(ejeyLamboFrontLeftWheel, ejezLamboFrontLeftWheel)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLamboFrontLeftWheel = glm::normalize(glm::cross(ejexLamboFrontLeftWheel, ejeyLamboFrontLeftWheel));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboFrontLeftWheel[0] = glm::vec4(ejexLamboFrontLeftWheel, 0.0);
+		modelMatrixLamboFrontLeftWheel[1] = glm::vec4(ejeyLamboFrontLeftWheel, 0.0);
+		modelMatrixLamboFrontLeftWheel[2] = glm::vec4(ejezLamboFrontLeftWheel, 0.0);
+		modelLamboFrontLeftWheel.render(modelMatrixLamboFrontLeftWheel);
+		
+		
+		//Rueda derecha delantera
+		modelMatrixLamboFrontRightWheel = glm::translate(modelMatrixLamboFrontRightWheel, glm::vec3(-0.93, 0.3791, 1.399));
+		//modelMatrixLamboFrontRightWheel = glm::rotate(modelMatrixLamboFrontRightWheel, rotWheelsYLambo, glm::vec3(0, 1, 0));
+		//modelMatrixLamboFrontRightWheel = glm::rotate(modelMatrixLamboFrontRightWheel, rotWheelsXLambo, glm::vec3(1, 0, 0));
+		modelMatrixLamboFrontRightWheel = glm::translate(modelMatrixLamboFrontRightWheel, glm::vec3(0.93, -0.3791, -1.399));
+		
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboFrontRightWheel[3][1]=terrain.getHeightTerrain(modelMatrixLamboFrontRightWheel[3][0],modelMatrixLamboFrontRightWheel[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLamboFrontRightWheel = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboFrontRightWheel[3][0], modelMatrixLamboFrontRightWheel[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLamboFrontRightWheel = glm::normalize(modelMatrixLamboFrontRightWheel[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLamboFrontRightWheel = glm::normalize(glm::cross(ejeyLamboFrontRightWheel, ejezLamboFrontRightWheel)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLamboFrontRightWheel = glm::normalize(glm::cross(ejexLamboFrontRightWheel, ejeyLamboFrontRightWheel));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboFrontRightWheel[0] = glm::vec4(ejexLamboFrontRightWheel, 0.0);
+		modelMatrixLamboFrontRightWheel[1] = glm::vec4(ejeyLamboFrontRightWheel, 0.0);
+		modelMatrixLamboFrontRightWheel[2] = glm::vec4(ejezLamboFrontRightWheel, 0.0);
+		modelLamboFrontRightWheel.render(modelMatrixLamboFrontRightWheel);
+		
+		
+		
+		//Rueda izquierda trasera
+		modelMatrixLamboRearLeftWheel = glm::translate(modelMatrixLamboRearLeftWheel, glm::vec3(0.93, 0.3991,-1.6));
+		//modelMatrixLamboRearLeftWheel = glm::rotate(modelMatrixLamboRearLeftWheel, rotWheelsYLambo, glm::vec3(0, 1, 0));
+		//modelMatrixLamboRearLeftWheel = glm::rotate(modelMatrixLamboRearLeftWheel, rotWheelsXLambo, glm::vec3(1, 0, 0));
+		modelMatrixLamboRearLeftWheel = glm::translate(modelMatrixLamboRearLeftWheel, glm::vec3(-0.93, -0.3991,1.6));
+		
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboRearLeftWheel[3][1]=terrain.getHeightTerrain(modelMatrixLamboRearLeftWheel[3][0],modelMatrixLamboRearLeftWheel[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLamboRearLeftWheel = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboRearLeftWheel[3][0], modelMatrixLamboRearLeftWheel[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLamboRearLeftWheel = glm::normalize(modelMatrixLamboRearLeftWheel[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLamboRearLeftWheel = glm::normalize(glm::cross(ejeyLamboRearLeftWheel, ejezLamboRearLeftWheel)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLamboRearLeftWheel = glm::normalize(glm::cross(ejexLamboRearLeftWheel, ejeyLamboRearLeftWheel));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboRearLeftWheel[0] = glm::vec4(ejexLamboRearLeftWheel, 0.0);
+		modelMatrixLamboRearLeftWheel[1] = glm::vec4(ejeyLamboRearLeftWheel, 0.0);
+		modelMatrixLamboRearLeftWheel[2] = glm::vec4(ejezLamboRearLeftWheel, 0.0);
+		modelLamboRearLeftWheel.render(modelMatrixLamboRearLeftWheel);
+		
+		
+		
+		//Rueda derecha trasera
+		modelMatrixLamboRearRightWheel = glm::translate(modelMatrixLamboRearRightWheel, glm::vec3(-0.93, 0.3991,-1.6));
+		//modelMatrixLamboRearRightWheel = glm::rotate(modelMatrixLamboRearRightWheel, rotWheelsYLambo, glm::vec3(0, 1, 0));
+		//modelMatrixLamboRearRightWheel = glm::rotate(modelMatrixLamboRearRightWheel, rotWheelsXLambo, glm::vec3(1, 0, 0));
+		modelMatrixLamboRearRightWheel = glm::translate(modelMatrixLamboRearRightWheel, glm::vec3(0.93, -0.3991,1.6));
+		
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboRearRightWheel[3][1]=terrain.getHeightTerrain(modelMatrixLamboRearRightWheel[3][0],modelMatrixLamboRearRightWheel[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLamboRearRightWheel = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboRearRightWheel[3][0], modelMatrixLamboRearRightWheel[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLamboRearRightWheel = glm::normalize(modelMatrixLamboRearRightWheel[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLamboRearRightWheel = glm::normalize(glm::cross(ejeyLamboRearRightWheel, ejezLamboRearRightWheel)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLamboRearRightWheel = glm::normalize(glm::cross(ejexLamboRearRightWheel, ejeyLamboRearRightWheel));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboRearRightWheel[0] = glm::vec4(ejexLamboRearRightWheel, 0.0);
+		modelMatrixLamboRearRightWheel[1] = glm::vec4(ejeyLamboRearRightWheel, 0.0);
+		modelMatrixLamboRearRightWheel[2] = glm::vec4(ejezLamboRearRightWheel, 0.0);
+		modelLamboRearRightWheel.render(modelMatrixLamboRearRightWheel);
+		
+		
+		
+		
+		
+		//Transformaciones de las puertas
 		glm::mat4 modelMatrixLamboLeftDor = glm::mat4(modelMatrixLamboChasis);
-		modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(1.08866, 0.705743, 0.968917));
+		modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(1.08676, 0.707316, 0.982601));
 		modelMatrixLamboLeftDor = glm::rotate(modelMatrixLamboLeftDor, glm::radians(dorRotCount), glm::vec3(1.0, 0, 0));
-		modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(-1.08866, -0.705743, -0.968917));
+		modelMatrixLamboLeftDor = glm::translate(modelMatrixLamboLeftDor, glm::vec3(-1.08676, -0.707316, -0.982601));
 		modelLamboLeftDor.render(modelMatrixLamboLeftDor);
 		modelLamboRightDor.render(modelMatrixLamboChasis);
-		modelLamboFrontLeftWheel.render(modelMatrixLamboChasis);
-		modelLamboFrontRightWheel.render(modelMatrixLamboChasis);
-		modelLamboRearLeftWheel.render(modelMatrixLamboChasis);
-		modelLamboRearRightWheel.render(modelMatrixLamboChasis);
 		// Se regresa el cull faces IMPORTANTE para las puertas
 		glEnable(GL_CULL_FACE);
 
@@ -1088,17 +1284,27 @@ void applicationLoop() {
 		/*****************************************
 		 * Objetos animados por huesos
 		 * **************************************/
-		modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0],modelMatrixMayow[3][2]);
-		glm::vec3 ejey = glm::normalize(terrain.getNormalTerrain(modelMatrixMayow[3][0],modelMatrixMayow[3][2])); //se obtienen normales en las coordendas "x" y "z"
-		//Para evitar problemas lo normalizamos ^ . Mayow se mueve sobre z:
-		glm::vec3 ejez = glm::normalize(modelMatrixMayow[2]);
-		//Se hace un producto cruz etre el eje y y el eje z. Todos deben de ser perpendiculare entre si o se deforma el objeto
-		glm::vec3 ejex = glm::normalize(glm::cross(ejey,ejez));
+		/* En la matriz los ejes x, y y z tienen la rotación, mientras que la cuarta columan tiene la posición
+		 * | x y z px |
+		 * | x y z py |
+		 * | x y z pz |
+		 * | x y z  1 |
+		 */
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejey = glm::normalize(terrain.getNormalTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejez = glm::normalize(modelMatrixMayow[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejex = glm::normalize(glm::cross(ejey, ejez)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
 		ejez = glm::normalize(glm::cross(ejex, ejey));
-		modelMatrixMayow[0] = glm::vec4(ejex,0.00);
-		modelMatrixMayow[1] = glm::vec4(ejey,0.00);
-		modelMatrixMayow[2] = glm::vec4(ejez,0.00);
-
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixMayow[0] = glm::vec4(ejex, 0.0);
+		modelMatrixMayow[1] = glm::vec4(ejey, 0.0);
+		modelMatrixMayow[2] = glm::vec4(ejez, 0.0);
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
 		mayowModelAnimate.setAnimationIndex(animationMayowIndex);
@@ -1118,6 +1324,61 @@ void applicationLoop() {
 		cyborgModelAnimate.setAnimationIndex(1);
 		cyborgModelAnimate.render(modelMatrixCyborgBody);
 
+		//CAT
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixCat[3][1] = terrain.getHeightTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyCat = glm::normalize(terrain.getNormalTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezCat = glm::normalize(modelMatrixCat[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexCat = glm::normalize(glm::cross(ejeyCat, ejezCat)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezCat = glm::normalize(glm::cross(ejexCat, ejeyCat));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixCat[0] = glm::vec4(ejexCat, 0.0);
+		modelMatrixCat[1] = glm::vec4(ejeyCat, 0.0);
+		modelMatrixCat[2] = glm::vec4(ejezCat, 0.0);
+		glm::mat4 modelMatrixCatBody = glm::mat4(modelMatrixCat);
+		modelMatrixCatBody = glm::scale(modelMatrixCatBody, glm::vec3(0.0005f));
+		modelCatAnimated.setAnimationIndex(animationCatIndex);
+		modelCatAnimated.render(modelMatrixCatBody);
+		animationCatIndex = 4;
+
+
+		//LAMBORGINI WITH TERRAIN
+		//modelLamboFrontLeftWheel.render(modelMatrixLamboChasis);
+		//modelLamboFrontRightWheel.render(modelMatrixLamboChasis);
+		//modelLamboRearLeftWheel.render(modelMatrixLamboChasis);
+		//modelLamboRearRightWheel.render(modelMatrixLamboChasis);
+/*
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixLamboChasis[3][1]=terrain.getHeightTerrain(modelMatrixLamboChasis[3][0],modelMatrixLamboChasis[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyLambo = glm::normalize(terrain.getNormalTerrain(modelMatrixLamboChasis[3][0], modelMatrixLamboChasis[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezLambo = glm::normalize(modelMatrixLamboChasis[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexLambo = glm::normalize(glm::cross(ejeyLambo, ejezLambo)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezLambo = glm::normalize(glm::cross(ejexLambo, ejeyLambo));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixLamboChasis[0] = glm::vec4(ejexLambo, 0.0);
+		modelMatrixLamboChasis[1] = glm::vec4(ejeyLambo, 0.0);
+		modelMatrixLamboChasis[2] = glm::vec4(ejezLambo, 0.0);
+
+
+		glm::mat4 modelMatrixLamboBody = glm::mat4(modelMatrixLamboChasis);
+		modelMatrixLamboBody = glm::scale(modelMatrixLamboBody, glm::vec3(0.0005f));
+		//modelCatAnimated.setAnimationIndex(animationCatIndex);
+		//modelCatAnimated.render(modelMatrixCatBody);
+		//animationCatIndex = 4;
+
+*/
 		/*******************************************
 		 * Skybox
 		 *******************************************/
@@ -1289,24 +1550,103 @@ void applicationLoop() {
 			break;
 		}
 
-		// Maquina de estado de lambo
-		switch (stateDoor)
-		{
-		case 0:
-			dorRotCount += 0.5;
-			if(dorRotCount > 75)
-				stateDoor = 1;
-			break;
-		case 1:
-			dorRotCount -= 0.5;
-			if(dorRotCount < 0){
-				dorRotCount = 0.0;
-				stateDoor = 0;
-			}
-		
-		default:
-			break;
+		//Maquina de estados para que el lambo se mueva
+		if(LamboFlag){
+			switch (stateLambo)
+				{
+				case 0:
+				//Case 0 sirve para que el carro avance en el carril interior
+					if(numberAdvanceLambo == 0)
+						maxAdvanceLambo = 39.78f;
+					else if(numberAdvanceLambo == 1)
+						maxAdvanceLambo = 39.5f;
+					else if (numberAdvanceLambo == 2)
+						maxAdvanceLambo = 34.5f;
+					else if (numberAdvanceLambo == 3)
+						maxAdvanceLambo = 39.5f;
+					else if (numberAdvanceLambo == 4){
+						maxAdvanceLambo = 0.0f;
+						avanceLambo = 0.0;
+						rotLambo=0;
+					}
+					stateLambo = 1;
+					break;
+				
+				case 1:
+				//Case 1 es para definir cuando el auto avanza en el carril
+					modelMatrixLambo=glm::translate(modelMatrixLambo, glm::vec3(0.0,0.0,avanceLambo));
+					advanceCountLambo+=avanceLambo;
+					rotWheelsXLambo+=0.025;
+					//Regresamos a la llanta a su posicion
+					rotWheelsYLambo-=0.0025;
+					//Cuando la llanta se endereza hacemos que se detenga
+					if (rotWheelsYLambo<0)
+						rotWheelsYLambo=0.0;
+					if(advanceCountLambo>maxAdvanceLambo){
+						advanceCountLambo =0.0;
+						//Se sube de nivel para que avance más
+						numberAdvanceLambo++;
+						stateLambo=2;							
+					}
+					if(numberAdvanceLambo==4){
+							advanceCountLambo=0;
+							rotWheelsYLambo=0;
+							rotWheelsXLambo=0;
+							
+						}
+					break;
+
+				case 2:
+				//Case 2 es para definir cuando el auto esta dando vuelta
+					modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(0,0,0.025));
+				//Checamos que el lambo se pueda rotar en base de y, utilizando la variable rotLambo
+					modelMatrixLambo = glm::rotate(modelMatrixLambo,glm::radians(rotLambo),glm::vec3(0.0f, 1.0f, 0.0f));
+					rotCountLambo+=rotLambo;
+					rotWheelsYLambo+=0.0025;
+					//Giramos las llantas
+					rotWheelsXLambo +=0.025;
+					if(rotWheelsYLambo>0.25)
+						rotWheelsYLambo=0.25f;
+					//Limitamos la rotacion
+					if(rotCountLambo>90.0){
+						//Al terminar de rotar, se regresa el valor a 0 para poder realizar el giro nuevamente
+						rotCountLambo = 0;
+						stateLambo = 0;
+						if(numberAdvanceLambo==4){
+							rotCountLambo=90;
+							advanceCountLambo=0;
+							rotLambo=0;
+
+						}
+
+					}
+					break;
+
+				default:
+					break;
+				}
 		}
+
+		//Se utiliza para que se pueda abrir y cerrar la puerta
+			if(numberAdvanceLambo==4 && rotLambo==0 ){
+				switch (stateDoor)
+				{
+				case 0:
+					dorRotCount++;
+					if(dorRotCount>75.0f)
+						stateDoor=1;
+					break;
+				
+				case 1:
+					dorRotCount--;
+					if(dorRotCount<0.0f)
+						dorRotCount=0;
+					break;
+				
+				default:
+					break;
+				}
+			}
 
 		// Constantes de animaciones
 		rotHelHelY += 0.5;

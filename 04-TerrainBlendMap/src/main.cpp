@@ -50,6 +50,8 @@ Shader shader;
 Shader shaderSkybox;
 //Shader con multiples luces
 Shader shaderMulLighting;
+//Shader del terreno
+Shader shaderTerrain;
 
 std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
 
@@ -115,12 +117,12 @@ GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
-		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
-		"../Textures/mp_bloodvalley/blood-valley_up.tga",
-		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
-		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
-		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+std::string fileNames[6] = { "../Textures/mountain-skyboxes/Maskonaive2/negx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negz.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posz.jpg" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -261,7 +263,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
 	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox.fs");
 	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation.vs", "../Shaders/multipleLights.fs");
-
+	shaderTerrain.initialize("../Shaders/terrain.vs", "../Shaders/terrain.fs");
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
 	skyboxSphere.setShader(&shaderSkybox);
@@ -369,7 +371,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Terreno
 	terrain.init();
-	terrain.setShader(&shaderMulLighting);
+	terrain.setShader(&shaderTerrain);
 
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
@@ -543,7 +545,7 @@ void destroy() {
 	shader.destroy();
 	shaderMulLighting.destroy();
 	shaderSkybox.destroy();
-
+	shaderTerrain.destroy();
 	// Basic objects Delete
 	skyboxSphere.destroy();
 	boxCesped.destroy();
@@ -896,11 +898,15 @@ void applicationLoop() {
 		shaderMulLighting.setMatrix4("view", 1, false,
 				glm::value_ptr(view));
 
+		// Settea la matriz de vista y projection al shader con multiples luces
+		shaderTerrain.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shaderTerrain.setMatrix4("view", 1, false, glm::value_ptr(view));
+				
 		/*******************************************
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
@@ -914,6 +920,30 @@ void applicationLoop() {
 		 * Propiedades PointLights
 		 *******************************************/
 		shaderMulLighting.setInt("pointLightCount", 0);
+
+
+		//***********************************************************************TERRAIN
+		/***
+		 * Propiedades Luz direccional
+		 ***/
+		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
+		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.8, 0.8, 0.8)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
+		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
+
+		/**
+		 * Propiedades SpotLights
+		 ***/
+		shaderTerrain.setInt("spotLightCount", 0);
+
+		/**
+		 * Propiedades PointLights
+		 **/
+		shaderTerrain.setInt("pointLightCount", 0);
+
+		
+		//***********************************************************************
 
 		/*******************************************
 		 * Terrain Cesped
