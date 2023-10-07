@@ -81,7 +81,7 @@ vec3 calculateDirectionalLight(Light light, vec3 direction){
 	vec4 colorTextureR = texture(textureR, tiledCoords) * blendMapColor.r;
 	vec4 colorTextureG = texture(textureG, tiledCoords) * blendMapColor.g;
 	vec4 colorTextureB = texture(textureB, tiledCoords) * blendMapColor.b;
-	vec3 totalColor = colorTextureBackground + colorTextureR + colorTextureG + colorTextureB;
+	vec4 totalColor = colorTextureBackground + colorTextureR + colorTextureG + colorTextureB;
 
 
 	//vec4 backgroundTextureColor = texture(backgroundTexture, tiledCoords);
