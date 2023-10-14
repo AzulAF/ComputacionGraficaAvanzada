@@ -65,7 +65,9 @@ Box boxCesped;
 Box boxWalls;
 Box boxHighway;
 Box boxLandingPad;
+Box caja;
 Sphere esfera1(10, 10);
+
 // Models complex instances
 Model modelRock;
 Model modelAircraft;
@@ -131,12 +133,12 @@ GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
-		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
-		"../Textures/mp_bloodvalley/blood-valley_up.tga",
-		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
-		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
-		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+std::string fileNames[6] = { "../Textures/mountain-skyboxes/Maskonaive2/negx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negz.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posz.jpg" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -295,6 +297,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	esfera1.init();
 	esfera1.setShader(&shaderMulLightingMT);
+
+	caja.init();
+	caja.setShader(&shaderMulLightingMT);
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -487,6 +492,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Definiendo la textura a utilizar
 	Texture textureWindow("../Textures/ventana.png");
+	//Texture textureWindow("../Textures/poolwater.jpg");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	textureWindow.loadImage();
 	// Creando la textura con id 1
@@ -543,10 +549,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Libera la memoria de la textura
 	textureHighway.freeImage();
 
-/*
+
 //TEXTURA DE LA SPONGE
 	// Definiendo la textura a utilizar
-	Texture textureSponge("../Textures/sponge.png");
+	Texture textureSponge("../Textures/newsponge.jpg");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	textureSponge.loadImage();
 	// Creando la textura con id 1
@@ -578,7 +584,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 //TEXTURA DE WATER
 	// Definiendo la textura a utilizar
-	Texture textureWater("../Textures/water.png");
+	Texture textureWater("../Textures/poolwater.jpg");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	textureWater.loadImage();
 	// Creando la textura con id 1
@@ -606,7 +612,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Failed to load texture" << std::endl;
 	// Libera la memoria de la textura
 	textureWater.freeImage();
-*/
+
 	// Definiendo la textura
 	Texture textureLandingPad("../Textures/landingPad.jpg");
 	textureLandingPad.loadImage(); // Cargar la textura
@@ -647,6 +653,7 @@ void destroy() {
 	boxHighway.destroy();
 	boxLandingPad.destroy();
 	esfera1.destroy();
+	caja.destroy();
 
 	// Custom objects Delete
 	modelAircraft.destroy();
@@ -1215,11 +1222,7 @@ void applicationLoop() {
 		/*******************************************
 		 * Esfera 1
 		*********************************************/
-
-
-		//Texture textureWater("../Textures/water.jpg");
-		//Texture textureSponge("../Textures/sponge.jpg");
-		
+	
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWallID);
 		shaderMulLightingMT.setInt("texture1", 0);
@@ -1230,7 +1233,7 @@ void applicationLoop() {
 		esfera1.setPosition(glm::vec3(3.0f, 2.0f, -10.0f));
 		esfera1.render();
 		
-
+//ESFERA 2: (la mas grande)
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureLandingPadID);
@@ -1243,7 +1246,40 @@ void applicationLoop() {
 		//esfera1.enableWireMode();
 		esfera1.render();
 		//esfera1.enableFillMode();
+
+
+		/*******************************************
+		 TAREA DE EL CUBO
+		*********************************************/
+
+
+		//Texture textureWater("../Textures/water.jpg");
+		//Texture textureSponge("../Textures/sponge.jpg");
 		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureWaterID);
+		shaderMulLightingMT.setInt("texture1", 0);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D,textureSpongeID);
+		shaderMulLightingMT.setInt("texture2", 3);
+		caja.setScale(glm::vec3(3.0, 3.0, 3.0));
+		caja.setPosition(glm::vec3(13.0f, 2.0f, -10.0f));
+		caja.setOrientation(glm::vec3(0.0, 0.0, 0.0));
+		caja.render();
+		
+		/*
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureSpongeID);
+		shaderMulLightingMT.setInt("texture2", 0);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, textureSpongeID);
+		shaderMulLightingMT.setInt("texture1", 3);
+		caja.setScale(glm::vec3(10.0, 10.0, 10.0));
+		caja.setPosition(glm::vec3(3.0f, 2.0f, 10.0f));
+		//esfera1.enableWireMode();
+		caja.render();
+		//esfera1.enableFillMode();
+		*/
 
 		/******************************************
 		 * Landing pad

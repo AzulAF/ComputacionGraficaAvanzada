@@ -104,7 +104,10 @@ Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
+//Model cat
+Model modelCatAnimated;
+
+Terrain terrain(-1, -1, 200, 8, "../Textures/terrain_paths2.png");
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID,textureGID,textureRID,textureBID, textureBlendMapID;
 GLuint skyboxTextureID;
@@ -140,8 +143,10 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCat = glm::mat4(1.0f);
 
 int animationMayowIndex = 1;
+int animationCatIndex = 4;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
@@ -373,6 +378,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
 
+	//Model cat
+	modelCatAnimated.loadModel("../models/cat/cat.fbx");
+	modelCatAnimated.setShader(&shaderMulLighting);
+
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
 	// Carga de texturas para el skybox
@@ -398,7 +407,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 
 	// Definiendo la textura a utilizar
-	Texture textureCesped("../Textures/grassy2.png");
+	Texture textureCesped("../Textures/square_grass.png");
+	//Texture textureCesped("../Textures/lava.jpg");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	textureCesped.loadImage();
 	// Creando la textura con id 1
@@ -536,7 +546,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Texturas del blendmapping
 	//Definiendo la textura DE RED
-	Texture textureR("../Textures/mud.png");
+	Texture textureR("../Textures/sand.png");
+	//Texture textureR("../Textures/mud.png");
 	textureR.loadImage(); // Cargar la textura
 	glGenTextures(1, &textureRID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureRID); // Se enlaza la textura
@@ -556,7 +567,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Texturas del blendmapping
 	//Definiendo la textura DE GREEN
-	Texture textureG("../Textures/grassFlowers.png");
+	Texture textureG("../Textures/grassnflowers.png");
+	//Texture textureG("../Textures/lava_rocks.png");
 	textureG.loadImage(); // Cargar la textura
 	glGenTextures(1, &textureGID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureGID); // Se enlaza la textura
@@ -576,7 +588,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Texturas del blendmapping
 	//Definiendo la textura DE BLUE
-	Texture textureB("../Textures/path.png");
+	Texture textureB("../Textures/pink_path.png");
 	textureB.loadImage(); // Cargar la textura
 	glGenTextures(1, &textureBID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureBID); // Se enlaza la textura
@@ -596,7 +608,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Texturas del blendmapping
 	//Definiendo la textura DE BLENDMAP
-	Texture textureBlendMap("../Textures/blendMapP4_2.png");
+	Texture textureBlendMap("../Textures/blendMapP4_3.png");
 	textureBlendMap.loadImage(); // Cargar la textura
 	glGenTextures(1, &textureBlendMapID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureBlendMapID); // Se enlaza la textura
@@ -672,6 +684,7 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
+	modelCatAnimated.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
@@ -900,6 +913,38 @@ bool processInput(bool continueApplication) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
 		animationMayowIndex = 0;
 	}
+	//Cat controls walk
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.003));
+		animationCatIndex = 6;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.003));
+		animationCatIndex = 6;
+	}
+	//Cat controls run
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	} else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	}
+	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.04));
+		animationCatIndex = 5;
+	}
+	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.04));
+		animationCatIndex = 5;
+	}
 
 	glfwPollEvents();
 	return continueApplication;
@@ -939,6 +984,10 @@ void applicationLoop() {
 	modelMatrixGuardian = glm::rotate(modelMatrixGuardian, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
+
+	//CAT coordinates
+	modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(3.0f, 0.00f, 30.0f));
+
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -1249,6 +1298,29 @@ void applicationLoop() {
 		modelMatrixCyborgBody = glm::scale(modelMatrixCyborgBody, glm::vec3(0.009f));
 		cyborgModelAnimate.setAnimationIndex(1);
 		cyborgModelAnimate.render(modelMatrixCyborgBody);
+
+		//CAT
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixCat[3][1] = terrain.getHeightTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyCat = glm::normalize(terrain.getNormalTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezCat = glm::normalize(modelMatrixCat[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexCat = glm::normalize(glm::cross(ejeyCat, ejezCat)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezCat = glm::normalize(glm::cross(ejexCat, ejeyCat));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixCat[0] = glm::vec4(ejexCat, 0.0);
+		modelMatrixCat[1] = glm::vec4(ejeyCat, 0.0);
+		modelMatrixCat[2] = glm::vec4(ejezCat, 0.0);
+		glm::mat4 modelMatrixCatBody = glm::mat4(modelMatrixCat);
+		modelMatrixCatBody = glm::scale(modelMatrixCatBody, glm::vec3(0.0005f));
+		modelCatAnimated.setAnimationIndex(animationCatIndex);
+		modelCatAnimated.render(modelMatrixCatBody);
+		animationCatIndex = 4;
 
 		/*******************************************
 		 * Skybox
