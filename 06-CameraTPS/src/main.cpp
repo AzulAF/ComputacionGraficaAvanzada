@@ -21,6 +21,7 @@
 #include "Headers/Cylinder.h"
 #include "Headers/Box.h"
 #include "Headers/FirstPersonCamera.h"
+#include "Headers/ThirdPersonCamera.h"
 
 //GLM include
 #define GLM_FORCE_RADIANS
@@ -53,7 +54,11 @@ Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
 
-std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
+std::shared_ptr<Camera> camera(new ThirdPersonCamera());
+//std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
+//Variable para definir la distancia al objetivo:
+float distanceFromTarget= 7.0;
+
 
 Sphere skyboxSphere(20, 20);
 Box boxCesped;
@@ -122,12 +127,12 @@ GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
-		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
-		"../Textures/mp_bloodvalley/blood-valley_up.tga",
-		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
-		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
-		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+std::string fileNames[6] = { "../Textures/mountain-skyboxes/Maskonaive2/negx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negz.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posz.jpg" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -220,10 +225,14 @@ const float giroEclipse = 0.5f;
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
+//Escuche del teclado
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 		int mode);
+//Escuche de movimiento de mouse y del click
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
+//Escuche del scroll del mouse
+void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
@@ -261,10 +270,12 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
 
+	
 	glfwSetWindowSizeCallback(window, reshapeCallback);
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetScrollCallback(window,scrollCallback);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	// Init glew
@@ -404,7 +415,11 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
 
+	//Para una camara en 1era persona. No se ocupa para una camara en tercera persona
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
+	//Se puede colocar la sensitividad y distancia en 3era persona
+	camera->setSensitivity(1.0f);
+	camera->setDistanceFromTarget(distanceFromTarget);
 	
 	// Carga de texturas para el skybox
 	Texture skyboxTexture = Texture("");
@@ -745,6 +760,11 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
 	lastMousePosY = ypos;
 }
 
+void scrollCallback(GLFWwindow *window, double xoffset, double yoffset){
+	distanceFromTarget -= yoffset;
+	camera->setDistanceFromTarget(distanceFromTarget);
+}
+
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod) {
 	if (state == GLFW_PRESS) {
 		switch (button) {
@@ -766,7 +786,7 @@ bool processInput(bool continueApplication) {
 	if (exitApp || glfwWindowShouldClose(window) != 0) {
 		return false;
 	}
-
+	/*
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		camera->moveFrontCamera(true, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -777,6 +797,19 @@ bool processInput(bool continueApplication) {
 		camera->moveRightCamera(true, deltaTime);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
+	*/
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)==GLFW_PRESS){
+		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
+		/*
+		if (offsetY>terrain.getHeightTerrain(camera->getPosition().x, camera->getPosition().y)){
+			offsetY=terrain.getHeightTerrain(camera->getPosition().x, camera->getPosition().y);
+		}
+		*/
+
+	}
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)==GLFW_PRESS){
+		camera->mouseMoveCamera(0, offsetY, deltaTime);
+	}
 	offsetX = 0;
 	offsetY = 0;
 
@@ -938,6 +971,9 @@ void applicationLoop() {
 
 	modelMatrixEclipse = glm::translate(modelMatrixEclipse, glm::vec3(27.5, 0, 30.0));
 	modelMatrixEclipse = glm::rotate(modelMatrixEclipse, glm::radians(180.0f), glm::vec3(0, 1, 0));
+	float angleTarget;
+	glm::vec3 axis;
+	glm::vec3 target;
 	int state = 0;
 	float advanceCount = 0.0;
 	float rotCount = 0.0;
@@ -997,6 +1033,31 @@ void applicationLoop() {
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 				(float) screenWidth / (float) screenHeight, 0.01f, 100.0f);
+
+		if(modelSelected == 1){
+			target = modelMatrixDart[3];
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
+			axis = glm::axis(glm::quat_cast(modelMatrixDart));
+		}
+		else {
+			target = modelMatrixMayow[3];
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixMayow));
+			axis = glm::axis(glm::quat_cast(modelMatrixMayow));
+		}
+		if(std::isnan(angleTarget)){
+			angleTarget=0;
+		}
+		if(axis.y < 0)
+			angleTarget = -angleTarget;
+
+		if (modelSelected == 1){
+			angleTarget -= glm::radians(230.0f);
+		}
+		camera->setAngleTarget(angleTarget);
+		camera->setCameraTarget(target);
+		camera->updateCamera();
+		
+
 		glm::mat4 view = camera->getViewMatrix();
 
 		// Settea la matriz de vista y projection al shader con solo color
