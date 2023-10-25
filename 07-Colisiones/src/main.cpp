@@ -124,12 +124,12 @@ GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
-		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
-		"../Textures/mp_bloodvalley/blood-valley_up.tga",
-		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
-		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
-		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+std::string fileNames[6] = { "../Textures/mountain-skyboxes/Maskonaive2/negx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posx.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negy.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/negz.jpg",
+		"../Textures/mountain-skyboxes/Maskonaive2/posz.jpg" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -215,6 +215,12 @@ std::vector<float> lamp2Orientation = {
 
 double deltaTime;
 double currTime, lastTime;
+
+//Variables para el salto
+bool isJump = false;
+float GRAVITY = 1.81;
+float tmv = 0.0;
+float startTimeJump = 0.0;
 
 // Variables animacion maquina de estados eclipse
 const float avance = 0.1;
@@ -935,6 +941,14 @@ bool processInput(bool continueApplication) {
 		animationMayowIndex = 0;
 	}
 
+	bool statusKeySpace = glfwGetKey(window,GLFW_KEY_SPACE) == GLFW_PRESS;
+	if(!isJump && statusKeySpace){
+		startTimeJump ==currTime;
+		tmv = 0;
+		isJump = true;
+		printf("Saltando");
+	}
+
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -1347,7 +1361,17 @@ void applicationLoop() {
 		modelMatrixMayow[0] = glm::vec4(ejex, 0.0);
 		modelMatrixMayow[1] = glm::vec4(ejey, 0.0);
 		modelMatrixMayow[2] = glm::vec4(ejez, 0.0);
-		modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		float alturaActual = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		//3.1 es la velocdiad con la que queremos que parta
+		modelMatrixMayow[3][1] = -GRAVITY * tmv * tmv + 3.1 * tmv + terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		tmv = currTime - startTimeJump;
+		if(modelMatrixMayow[3][1] == alturaActual){
+			isJump=false;
+			modelMatrixMayow[3][1] = alturaActual;
+
+		}
+
+		//modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
 		mayowModelAnimate.setAnimationIndex(animationMayowIndex);

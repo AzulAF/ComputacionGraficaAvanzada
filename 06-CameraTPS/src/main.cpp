@@ -55,10 +55,13 @@ Shader shaderMulLighting;
 Shader shaderTerrain;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
-//std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
+std::shared_ptr<Camera> cameracat(new ThirdPersonCamera());
+std::shared_ptr<FirstPersonCamera> cameraOne(new FirstPersonCamera());
 //Variable para definir la distancia al objetivo:
 float distanceFromTarget= 7.0;
-
+float distanceFromTargetcat= 7.0;
+bool firstPOV = false;
+bool thirdPOV = true;
 
 Sphere skyboxSphere(20, 20);
 Box boxCesped;
@@ -112,6 +115,8 @@ Model cowboyModelAnimate;
 Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
+//Model cat
+Model modelCatAnimated;
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
 
@@ -150,8 +155,11 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCat = glm::mat4(1.0f);
+
 
 int animationMayowIndex = 1;
+int animationCatIndex = 4;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
@@ -317,6 +325,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	esfera1.init();
 	esfera1.setShader(&shaderMulLighting);
+	//Model cat
+	modelCatAnimated.loadModel("../models/cat/cat.fbx");
+	modelCatAnimated.setShader(&shaderMulLighting);
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -417,10 +428,16 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	//Para una camara en 1era persona. No se ocupa para una camara en tercera persona
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
+	cameracat->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	//Se puede colocar la sensitividad y distancia en 3era persona
 	camera->setSensitivity(1.0f);
 	camera->setDistanceFromTarget(distanceFromTarget);
-	
+	//Camara del gato
+	cameracat->setSensitivity(1.0f);
+	cameracat->setDistanceFromTarget(distanceFromTargetcat);
+
+
+	cameraOne->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	// Carga de texturas para el skybox
 	Texture skyboxTexture = Texture("");
 	glGenTextures(1, &skyboxTextureID);
@@ -715,6 +732,7 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
+	modelCatAnimated.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
@@ -762,7 +780,9 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
 
 void scrollCallback(GLFWwindow *window, double xoffset, double yoffset){
 	distanceFromTarget -= yoffset;
+	distanceFromTargetcat -= yoffset;
 	camera->setDistanceFromTarget(distanceFromTarget);
+	cameracat->setDistanceFromTarget(distanceFromTarget);
 }
 
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod) {
@@ -786,30 +806,39 @@ bool processInput(bool continueApplication) {
 	if (exitApp || glfwWindowShouldClose(window) != 0) {
 		return false;
 	}
-	/*
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera->moveFrontCamera(true, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera->moveFrontCamera(false, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera->moveRightCamera(false, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera->moveRightCamera(true, deltaTime);
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
-	*/
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)==GLFW_PRESS){
-		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
-		/*
-		if (offsetY>terrain.getHeightTerrain(camera->getPosition().x, camera->getPosition().y)){
-			offsetY=terrain.getHeightTerrain(camera->getPosition().x, camera->getPosition().y);
+	//Camara en primera persona y tercer POV
+	//SI FUNCIONA, SOLO QUE LEE MUY RAPIDO, POR LO QUE SE TIENE QUE PRESIONAR AMBAS TECLAS Y SOLTARLAS RAPIDO
+	if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS){
+		if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE && glfwGetKey(window, GLFW_KEY_K) == GLFW_RELEASE){
+			if (firstPOV == false){
+				firstPOV = true;
+			}else{
+				firstPOV = false;
+			}
 		}
-		*/
-
 	}
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)==GLFW_PRESS){
-		camera->mouseMoveCamera(0, offsetY, deltaTime);
+	if(firstPOV == true){
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			cameraOne->moveFrontCamera(true, deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			cameraOne->moveFrontCamera(false, deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			cameraOne->moveRightCamera(false, deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			cameraOne->moveRightCamera(true, deltaTime);
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+			cameraOne->mouseMoveCamera(offsetX, offsetY, deltaTime);
 	}
+	if(firstPOV == false){
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)==GLFW_PRESS){
+			camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
+			if (modelSelected == 2)
+				cameracat->mouseMoveCamera(offsetX, offsetY, deltaTime);
+		}
+	}
+	
+	//Moimiento de la camara en 3era persona
+	
 	offsetX = 0;
 	offsetY = 0;
 
@@ -961,6 +990,38 @@ bool processInput(bool continueApplication) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
 		animationMayowIndex = 0;
 	}
+	//Cat controls walk
+	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	} else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.002f, glm::vec3(0, 1, 0));
+		animationCatIndex = 6;
+	}
+	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.003));
+		animationCatIndex = 6;
+	}
+	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.003));
+		animationCatIndex = 6;
+	}
+	//Cat controls run
+	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	} else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 5;
+	}
+	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.04));
+		animationCatIndex = 5;
+	}
+	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.04));
+		animationCatIndex = 5;
+	}
 
 	glfwPollEvents();
 	return continueApplication;
@@ -1003,6 +1064,8 @@ void applicationLoop() {
 	modelMatrixGuardian = glm::rotate(modelMatrixGuardian, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
+	//CAT coordinates
+	modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(3.0f, 0.00f, 30.0f));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -1038,6 +1101,10 @@ void applicationLoop() {
 			target = modelMatrixDart[3];
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
 			axis = glm::axis(glm::quat_cast(modelMatrixDart));
+		}else if(modelSelected == 2){
+			target = modelMatrixCat[3];
+			angleTarget = glm::angle(glm::quat_cast(modelMatrixCat));
+			axis = glm::axis(glm::quat_cast(modelMatrixCat));
 		}
 		else {
 			target = modelMatrixMayow[3];
@@ -1053,12 +1120,22 @@ void applicationLoop() {
 		if (modelSelected == 1){
 			angleTarget -= glm::radians(230.0f);
 		}
+		if (modelSelected == 2){
+			angleTarget -= glm::radians(230.0f);
+		}
+
 		camera->setAngleTarget(angleTarget);
 		camera->setCameraTarget(target);
 		camera->updateCamera();
+		glm::mat4 view;
+		if(firstPOV){
+			view = cameraOne->getViewMatrix();
+		}
+		if(firstPOV == false){
+			view = camera->getViewMatrix();
+		}
 		
-
-		glm::mat4 view = camera->getViewMatrix();
+		
 
 		// Settea la matriz de vista y projection al shader con solo color
 		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
@@ -1090,6 +1167,20 @@ void applicationLoop() {
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
 
 		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
+		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
+		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
+
+
+		//Camar primera persona
+		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(cameraOne->getPosition()));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
+		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
+
+		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(cameraOne->getPosition()));
 		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
@@ -1134,14 +1225,14 @@ void applicationLoop() {
 			matrixAdjustLamp = glm::scale(matrixAdjustLamp, glm::vec3(0.5));
 			matrixAdjustLamp = glm::translate(matrixAdjustLamp, glm::vec3(0.0, 10.35, 0));
 			glm::vec3 lampPosition = glm::vec3(matrixAdjustLamp[3]);
-			shaderMulLighting.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.ambient", glm::value_ptr(glm::vec3(0.2, 0.16, 0.01)));
+			shaderMulLighting.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.ambient", glm::value_ptr(glm::vec3(0.9, 0.96, 0.91)));
 			shaderMulLighting.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.diffuse", glm::value_ptr(glm::vec3(0.4, 0.32, 0.02)));
 			shaderMulLighting.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.specular", glm::value_ptr(glm::vec3(0.6, 0.58, 0.03)));
 			shaderMulLighting.setVectorFloat3("pointLights[" + std::to_string(i) + "].position", glm::value_ptr(lampPosition));
 			shaderMulLighting.setFloat("pointLights[" + std::to_string(i) + "].constant", 1.0);
 			shaderMulLighting.setFloat("pointLights[" + std::to_string(i) + "].linear", 0.09);
 			shaderMulLighting.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.02);
-			shaderTerrain.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.ambient", glm::value_ptr(glm::vec3(0.2, 0.16, 0.01)));
+			shaderTerrain.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.ambient", glm::value_ptr(glm::vec3(0.9, 0.96, 0.91)));
 			shaderTerrain.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.diffuse", glm::value_ptr(glm::vec3(0.4, 0.32, 0.02)));
 			shaderTerrain.setVectorFloat3("pointLights[" + std::to_string(i) + "].light.specular", glm::value_ptr(glm::vec3(0.6, 0.58, 0.03)));
 			shaderTerrain.setVectorFloat3("pointLights[" + std::to_string(i) + "].position", glm::value_ptr(lampPosition));
@@ -1399,6 +1490,30 @@ void applicationLoop() {
 		modelMatrixCyborgBody = glm::scale(modelMatrixCyborgBody, glm::vec3(0.009f));
 		cyborgModelAnimate.setAnimationIndex(1);
 		cyborgModelAnimate.render(modelMatrixCyborgBody);
+
+
+		//CAT
+		//Movimiento de hueso
+		// y = a la altura (posición en x, posición en z)
+		modelMatrixCat[3][1] = terrain.getHeightTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2]);
+		//Se obtiene primero la normal del terreno en la que se encuentra el modelo
+		glm::vec3 ejeyCat = glm::normalize(terrain.getNormalTerrain(modelMatrixCat[3][0], modelMatrixCat[3][2])); 
+		//Se obtiene el eje en el que se mueve
+		glm::vec3 ejezCat = glm::normalize(modelMatrixCat[2]); 
+		//Se obtiene el eje perpendicular a los ejes anteriores para adaptar la rotación
+		glm::vec3 ejexCat = glm::normalize(glm::cross(ejeyCat, ejezCat)); 
+		//Si se utilizan estos ejes, el modelo se conenazará a deformar, pues no es perpendicular conforme a x y y.
+		//El eje z tiene que ser perpendicular, por lo que es necesario hacer punto cruz entre x y y que ya son perpendiculares
+		ejezCat = glm::normalize(glm::cross(ejexCat, ejeyCat));
+		//Una vez que todos los ejes son perpendiculares, se sustituyen los valores en la matriz del personaje
+		modelMatrixCat[0] = glm::vec4(ejexCat, 0.0);
+		modelMatrixCat[1] = glm::vec4(ejeyCat, 0.0);
+		modelMatrixCat[2] = glm::vec4(ejezCat, 0.0);
+		glm::mat4 modelMatrixCatBody = glm::mat4(modelMatrixCat);
+		modelMatrixCatBody = glm::scale(modelMatrixCatBody, glm::vec3(0.0005f));
+		modelCatAnimated.setAnimationIndex(animationCatIndex);
+		modelCatAnimated.render(modelMatrixCatBody);
+		animationCatIndex = 4;
 
 		/*******************************************
 		 * Skybox
