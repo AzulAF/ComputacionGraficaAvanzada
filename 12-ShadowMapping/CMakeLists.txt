@@ -5,7 +5,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Set the directory where DLLs are located
     set(CMAKE_DLLTOOLCHAIN_PREFIX "../dlls")
     include_directories(
-        09-Blending
+        12-ShadowMapping
         ${CMAKE_SOURCE_DIR}/CGALib/include
         "/usr/include/freetype2" 
         "../external/assimp/include"
@@ -30,16 +30,16 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include_directories(${CMAKE_SOURCE_DIR}/CGALib/include "/usr/include/freetype2")
 endif()
 
-add_executable(09-Blending ./src/main.cpp)
+add_executable(12-ShadowMapping ./src/main.cpp)
 
-set_target_properties(09-Blending
+set_target_properties(12-ShadowMapping
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "../../bin"
 )
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_link_libraries(09-Blending opengl32.lib libglfw3dll.dll.a libglew32.dll.a libassimp.dll.a libfreetype.dll.a libalut.dll.a OpenAL32.lib CGALib)
+    target_link_libraries(12-ShadowMapping opengl32.lib libglfw3dll.dll.a libglew32.dll.a libassimp.dll.a libfreetype.dll.a libalut.dll.a OpenAL32.lib CGALib)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(09-Blending glut glfw GLEW GLU GL freeimage assimp freetype alut openal CGALib)
+    target_link_libraries(12-ShadowMapping glut glfw GLEW GLU GL freeimage assimp freetype alut openal CGALib)
 endif()
