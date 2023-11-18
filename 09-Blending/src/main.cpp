@@ -16,8 +16,8 @@
 // Shader include
 #include "Headers/Shader.h"
 
-// Model geometric includes
-#include "Headers/Sphere.h"
+// Model geometric includes 
+#include "Headers/Sphere.h" 
 #include "Headers/Cylinder.h"
 #include "Headers/Box.h"
 #include "Headers/FirstPersonCamera.h"

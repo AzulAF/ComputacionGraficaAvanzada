@@ -1070,7 +1070,7 @@ void applicationLoop() {
 	float rotWheelsY = 0.0;
 	int numberAdvance = 0;
 	int maxAdvance = 0.0;
-
+	
 	matrixModelRock = glm::translate(matrixModelRock, glm::vec3(-3.0, 0.0, 2.0));
 
 	modelMatrixHeli = glm::translate(modelMatrixHeli, glm::vec3(5.0, 10.0, -5.0));
@@ -1113,6 +1113,8 @@ void applicationLoop() {
 		deltaTime = TimeManager::Instance().DeltaTime;
 		psi = processInput(true);
 
+		//Variable para checar colisiones
+		std::map<std::string,bool> collisionDetector;
 		// Variables donde se guardan las matrices de cada articulacion por 1 frame
 		std::vector<float> matrixDartJoints;
 		std::vector<glm::mat4> matrixDart;
@@ -1169,13 +1171,13 @@ void applicationLoop() {
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.5, 0.5, 0.5)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
 
 		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.5, 0.5, 0.5)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
 		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
@@ -1606,6 +1608,111 @@ void applicationLoop() {
 			boxCollider.render(matrixCollider);
 
 		}
+
+		/******************PRUEBAS DE COLISIÓN ***********************/
+		//Rweferencias de SBB-SBB
+		std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator itSBB;
+		itSBB = collidersSBB.begin();
+			for (;itSBB != collidersSBB.end(); itSBB++){
+				std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator jtSBB;
+					jtSBB = collidersSBB.begin();
+				bool isCollision = false;
+				for (;jtSBB != collidersSBB.end(); jtSBB++){
+					//Calcula la distancia que extiste entre los dos centros 
+					if(itSBB!= jtSBB && testSphereSphereIntersection(std::get<0>(itSBB->second), std::get<0>(jtSBB->second))){
+						std::cout << "colison entre " <<itSBB->first<<" y "<<jtSBB->first<<std::endl;
+						isCollision = true;
+					}
+
+				}
+				addOrUpdateCollisionDetection(collisionDetector, itSBB->first, isCollision);
+			} 
+
+		//Referencias de OBB-OBB
+		std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator itOBB;
+		itOBB = collidersOBB.begin();
+			for (;itOBB != collidersOBB.end(); itOBB++){
+				std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator jtOBB;
+					jtOBB = collidersOBB.begin();
+				bool isCollision = false;
+				for (;jtOBB != collidersOBB.end(); jtOBB++){
+					//Calcula la distancia que extiste entre los dos centros 
+					if(itOBB!= jtOBB && testOBBOBB(std::get<0>(itOBB->second), std::get<0>(jtOBB->second))){
+						std::cout << "colison entre " <<itOBB->first<<" y "<<jtOBB->first<<std::endl;
+						isCollision = true;
+					}
+
+				}
+				addOrUpdateCollisionDetection(collisionDetector, itOBB->first, isCollision);
+			}
+
+
+		
+
+
+		//REFERENCIAS DE SBB-OBB
+		//std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator itOBB;
+		itOBB = collidersOBB.begin();
+			for (;itOBB != collidersOBB.end(); itOBB++){
+				std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator jtSBB;
+					jtSBB = collidersSBB.begin();
+				bool isCollision = false;
+				for (;jtSBB != collidersSBB.end(); jtSBB++){
+					//Calcula la distancia que extiste entre los dos centros 
+					if(testSphereOBox(std::get<0>(jtSBB->second), std::get<0>(itOBB->second))){
+						std::cout << "colison entre " <<itOBB->first<<" y "<<jtSBB->first<<std::endl;
+						isCollision = true;
+						addOrUpdateCollisionDetection(collisionDetector, jtSBB->first, true);
+					}
+
+				}
+				addOrUpdateCollisionDetection(collisionDetector, itOBB->first, isCollision);
+			}
+
+
+		/******************FIN DE PRUEBAS DE COLISIÓN ***********************/
+
+
+
+		//COLISION
+
+		std::map<std::string, bool>::iterator itCollider = collisionDetector.begin();
+		for(;itCollider != collisionDetector.end(); itCollider++){
+			std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator SBBBusqueda;
+			SBBBusqueda = collidersSBB.find(itCollider->first);
+			std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator OBBBusqueda;
+			OBBBusqueda = collidersOBB.find(itCollider->first);
+			//Si se encuentra en las SBB
+			if(SBBBusqueda != collidersSBB.end()){
+				if(itCollider->second){
+					//Si chocan con algo entran en este if
+					addOrUpdateColliders(collidersSBB, itCollider->first);
+				}
+			}
+			else if (OBBBusqueda != collidersOBB.end()){
+			//Si se encuentra en la OBB
+				if(!itCollider->second){
+					addOrUpdateColliders(collidersOBB, itCollider->first);
+				}
+				else{
+					if(itCollider->first.compare("mayow")==0){
+						//Entra aqui si es igual a Mayow
+						modelMatrixMayow = std::get<1>(OBBBusqueda->second);
+					}
+				}
+			}
+		}
+
+		//Bugs:
+		/*
+		Si salta el personaje y se colisiona con un objeto, se va a detener y atascar el personaje con el objeto. Se debe 
+		saltar para atrás para soltarse de el objeto.
+
+		Si el personaje colisiona con un objeto que se esta moviendo, el objeto no sufre cambios (debe de ser movido por el personaje)
+
+		Si estamos brincando y avanzando, si soltamos a medio salto la animación del salto se "reinicia" desde el punto superior. 
+		*/
+
 		//Sphere SBB
 		std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator jt;
 		for(jt = collidersSBB.begin(); jt != collidersSBB.end(); jt++){
@@ -1633,14 +1740,23 @@ void applicationLoop() {
 		//Renderizacion
 		rayModel.render(modelMatrixRayMay);
 
+		
 		for(jt = collidersSBB.begin(); jt!=collidersSBB.end(); jt++){
 			float tRint;
 			if(raySphereIntersect(ori, targetRay, rayDirection, std::get<0>(jt->second),tRint)){
 				std::cout << "Colision del rayo con el modelo" << jt->first << std::endl;
 			}
 
+		}
+
+		for(itOBB = collidersOBB.begin(); itOBB!=collidersOBB.end(); itOBB++){
+			float tRint;
+			if(testRayOBB(ori, targetRay, std::get<0>(itOBB->second))){
+				std::cout << "Colision del rayo con el modelo" << itOBB->first << std::endl;
+			}
 
 		}
+	
 
 		// Animaciones por keyframes dart Vader
 		// Para salvar los keyframes
