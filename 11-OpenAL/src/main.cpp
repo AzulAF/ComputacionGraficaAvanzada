@@ -44,6 +44,7 @@
 
 // Include Colision headers functions
 #include "Headers/Colisiones.h"
+#include "AL/alut.h"
 
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
@@ -260,6 +261,38 @@ std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > col
 // Variables animacion maquina de estados eclipse
 const float avance = 0.1;
 const float giroEclipse = 0.5f;
+
+//Definiciones de OpenAL
+#define NUM_BUFFERS 3
+#define NUM_SOURCES 3
+#define NM_ENVIRONMENT 1
+//Listener
+ALfloat listenerPos[] = {0.0, 0.0, 0.0};
+ALfloat listenerVel[] = {0.0, 0.0, 0.0};
+ALfloat listenerOri[] = {0.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+//Source 0
+ALfloat source0Pos[] = {0.0, 0.0, 0.0};
+ALfloat source0Vel[] = {0.0, 0.0, 0.0};
+//Source 1
+ALfloat source1Pos[] = {0.0, 0.0, 0.0};
+ALfloat source1Vel[] = {0.0, 0.0, 0.0};
+//Source 2
+ALfloat source2Pos[] = {0.0, 0.0, 0.0};
+ALfloat source2Vel[] = {0.0, 0.0, 0.0};
+//Buffers
+ALuint buffer[NUM_BUFFERS];
+ALuint source[NUM_SOURCES];
+ALuint environment[NM_ENVIRONMENT];
+//Config del audio
+ALsizei size, freq;
+ALenum format;
+ALvoid *data;
+//Numero de canales
+int ch;
+//Si el sonido va a estar en loop
+ALboolean loop;
+//Banderas para reproducir al mismo tiempo o no
+std::vector<bool> sourcesPlay = {true, false, true};
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
@@ -773,7 +806,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	/*******************************************
 	 * OpenAL init
 	 *******************************************/
-	/*alutInit(0, nullptr);
+
+
+	alutInit(0, nullptr);
 	alListenerfv(AL_POSITION, listenerPos);
 	alListenerfv(AL_VELOCITY, listenerVel);
 	alListenerfv(AL_ORIENTATION, listenerOri);
@@ -787,7 +822,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 	// Generate buffers, or else no sound will happen!
 	alGenBuffers(NUM_BUFFERS, buffer);
-	buffer[0] = alutCreateBufferFromFile("../sounds/fountain.wav");
+	//buffer[0] = alutCreateBufferFromFile("../sounds/fountain.wav");
+	buffer[0] = alutCreateBufferFromFile("../sounds/audios_proyecto.wav");
 	buffer[1] = alutCreateBufferFromFile("../sounds/fire.wav");
 	buffer[2] = alutCreateBufferFromFile("../sounds/darth_vader.wav");
 	int errorAlut = alutGetError();
@@ -805,7 +841,27 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 	else {
 		printf("init - no errors after alGenSources\n");
-	}*/
+	}
+
+	alSourcef(source[0], AL_PITCH, 1.0f);
+	alSourcef(source[0], AL_GAIN, 1.0f); //aqui es 3.0
+	alSourcei(source[0], AL_BUFFER, buffer[0]);
+	alSourcei(source[0], AL_LOOPING, AL_TRUE);
+	alSourcef(source[0], AL_MAX_DISTANCE, 2000);
+
+
+	alSourcef(source[1], AL_PITCH, 1.0f);
+	//Escalamos el sonido al 50% del original
+	alSourcef(source[1], AL_GAIN, 0.5f);
+	alSourcei(source[1], AL_BUFFER, buffer[1]);
+	alSourcei(source[1], AL_LOOPING, AL_TRUE);
+	alSourcef(source[1], AL_MAX_DISTANCE, 1000);
+
+	alSourcef(source[2], AL_PITCH, 1.0f);
+	alSourcef(source[2], AL_GAIN, 0.3f);
+	alSourcei(source[2], AL_BUFFER, buffer[2]);
+	alSourcei(source[2], AL_LOOPING, AL_TRUE);
+	alSourcef(source[2], AL_MAX_DISTANCE, 2000);
 }
 
 void destroy() {
@@ -1149,11 +1205,11 @@ bool processInput(bool continueApplication) {
 		animationMayowIndex = 0;
 	}
 	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, 0.02));
+		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, 0.07));
 		animationMayowIndex = 0;
 	}
 	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
+		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.07));
 		animationMayowIndex = 0;
 	}
 
@@ -1162,6 +1218,8 @@ bool processInput(bool continueApplication) {
 		isJump = true;
 		startTimeJump = currTime;
 		tmv = 0;
+		//Con esto puede activarse el sonido de un brinco
+		sourcesPlay[1]=true;
 	}
 
 	glfwPollEvents();
@@ -1294,13 +1352,13 @@ void applicationLoop() {
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.5, 0.5, 0.5)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
 		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
 
 		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.05, 0.05, 0.05)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.5, 0.5, 0.5)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
 		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
@@ -1565,6 +1623,7 @@ void applicationLoop() {
 		if(modelMatrixMayow[3][1] < terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2])){
 			isJump = false;
 			modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+			alSourceStop(source[1]);
 		}
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
@@ -2112,6 +2171,53 @@ void applicationLoop() {
 		rotHelHelBack += 0.5;
 
 		glfwSwapBuffers(window);
+
+		/***************OPENAL SOURCE DATA**************/
+
+		source0Pos[0] = modelMatrixFountain[3].x;
+		source0Pos[1] = modelMatrixFountain[3].y;
+		source0Pos[2] = modelMatrixFountain[3].z;
+
+		source1Pos[0] = modelMatrixGuardian[3].x;
+		source1Pos[1] = modelMatrixGuardian[3].y;
+		source1Pos[2] = modelMatrixGuardian[3].z;
+
+		source2Pos[0] = modelMatrixDart[3].x;
+		source2Pos[1] = modelMatrixDart[3].y;
+		source2Pos[2] = modelMatrixDart[3].z;
+
+		//Listener camara en 3era persona
+		listenerPos[0] = modelMatrixMayow[3].x;
+		listenerPos[1] = modelMatrixMayow[3].y;
+		listenerPos[2] = modelMatrixMayow[3].z;
+
+		glm::vec3 upModel = glm::normalize(modelMatrixMayow[1]);
+		glm::vec3 frontModel = glm::normalize(modelMatrixMayow[2]);
+
+		listenerOri[0] = frontModel.x;
+		listenerOri[1] = frontModel.y;
+		listenerOri[2] = frontModel.z;
+		listenerOri[3] = upModel.x;
+		listenerOri[4] = upModel.y;
+		listenerOri[5] = upModel.z;
+
+		//Enviar al engine los sources y el listener
+		alSourcefv(source[0], AL_POSITION, source0Pos);
+		alSourcefv(source[0], AL_POSITION, source0Vel);
+		alSourcefv(source[1], AL_POSITION, source1Pos);
+		alSourcefv(source[1], AL_POSITION, source1Vel);
+		alSourcefv(source[2], AL_POSITION, source2Pos);
+		alSourcefv(source[2], AL_POSITION, source2Vel);
+
+		alListenerfv(AL_POSITION, listenerPos);
+		alListenerfv(AL_POSITION, listenerOri);
+
+		for(unsigned int i=0; i<sourcesPlay.size(); i++){
+			if(sourcesPlay[i]){
+				sourcesPlay[i] = false;
+				alSourcePlay(source[i]);
+			}
+		}
 	}
 }
 
