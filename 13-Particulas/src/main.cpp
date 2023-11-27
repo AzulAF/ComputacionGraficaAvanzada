@@ -74,7 +74,7 @@ Shader shaderDepth;
 // Shader para visualizar el buffer de profundidad
 Shader shaderViewDepth;
 //Shader para las particulas de fountain
-/*Shader shaderParticlesFountain;*/
+Shader shaderParticlesFountain;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 float distanceFromTarget = 7.0;
@@ -311,6 +311,10 @@ std::vector<bool> sourcesPlay = {true, true, true};
 // Framesbuffers
 GLuint depthMap, depthMapFBO;
 
+//Definición del framebuffer
+GLuint initVel, startTime, VAOParticles, nParticles = 400;
+double curTimeParticlesFountainAnimation, lastTimeParticlesFountainAnimation; 
+
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
@@ -322,6 +326,76 @@ void initParticleBuffers();
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
+
+//Este cacho lo colocamos en clase, pero lo comento por ahora
+/*
+void initParticleBuffers() {
+    // Generate the buffers
+    glGenBuffers(1, &initVel);   // Initial velocity buffer
+    glGenBuffers(1, &startTime); // Start time buffer
+
+    // Allocate space for all buffers
+    int size = nParticles * 3 * sizeof(float);
+    glBindBuffer(GL_ARRAY_BUFFER, initVel);
+    glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, startTime);
+    glBufferData(GL_ARRAY_BUFFER, nParticles * sizeof(float), NULL, GL_STATIC_DRAW);
+
+	
+	//Modelo a implementa para modelar un fenomeno fisico en base de un modelo cinematico 
+	//el cual consiste en considerar cada aprticula como un punto independiente que 
+	//no influye en otroa
+    // Fill the first velocity buffer with random velocities
+    glm::vec3 v(0.0f);
+    float velocity, theta, phi;
+    GLfloat *data = new GLfloat[nParticles * 3];
+    for (unsigned int i = 0; i < nParticles; i++) {
+
+        theta = glm::mix(0.0f, glm::pi<float>() / 6.0f, ((float)rand() / RAND_MAX));
+        phi = glm::mix(0.0f, glm::two_pi<float>(), ((float)rand() / RAND_MAX));
+
+        v.x = sinf(theta) * cosf(phi);
+        v.y = cosf(theta);
+        v.z = sinf(theta) * sinf(phi);
+
+        velocity = glm::mix(0.6f, 0.8f, ((float)rand() / RAND_MAX));
+        v = glm::normalize(v) * velocity;
+
+        data[3 * i] = v.x;
+        data[3 * i + 1] = v.y;
+        data[3 * i + 2] = v.z;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, initVel);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+
+    // Fill the start time buffer
+    delete[] data;
+    data = new GLfloat[nParticles];
+    float time = 0.0f;
+    float rate = 0.00075f;
+    for (unsigned int i = 0; i < nParticles; i++) {
+        data[i] = time;
+        time += rate;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, startTime);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, nParticles * sizeof(float), data);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    delete[] data;
+
+    glGenVertexArrays(1, &VAOParticles);
+    glBindVertexArray(VAOParticles);
+    glBindBuffer(GL_ARRAY_BUFFER, initVel);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, startTime);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+}
+*/
 
 // Implementacion de todas las funciones.
 void init(int width, int height, std::string strTitle, bool bFullScreen) {
@@ -339,11 +413,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	if (bFullScreen)
-		window = glfwCreateWindow(width, height, strTitle.c_str(),
-				glfwGetPrimaryMonitor(), nullptr);
+		window = glfwCreateWindow(width, height, strTitle.c_str(), glfwGetPrimaryMonitor(), nullptr);
 	else
-		window = glfwCreateWindow(width, height, strTitle.c_str(), nullptr,
-				nullptr);
+		window = glfwCreateWindow(width, height, strTitle.c_str(), nullptr, nullptr);
 
 	if (window == nullptr) {
 		std::cerr
@@ -385,7 +457,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderTexture.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
 	shaderViewDepth.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado_depth_view.fs");
 	shaderDepth.initialize("../Shaders/shadow_mapping_depth.vs", "../Shaders/shadow_mapping_depth.fs");
-	/*shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");*/
+	shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();

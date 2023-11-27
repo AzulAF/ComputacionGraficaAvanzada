@@ -99,7 +99,7 @@ float calculateShadow(vec3 lightDir){
 
 
     // This is the final version of the shadow mapping with shadow bias to correct the shadow acne
-    /*vec3 normal = normalize(our_normal);
+    vec3 normal = normalize(our_normal);
 	float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);  
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -113,7 +113,7 @@ float calculateShadow(vec3 lightDir){
 	}
 	shadow /= 9.0;
 	if(projCoords.z > 1.0)
-        shadow = 0.0;*/
+        shadow = 0.0;
 
     return shadow;
 }
