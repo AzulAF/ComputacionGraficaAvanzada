@@ -93,52 +93,13 @@ Box boxIntro;
 Box boxViewDepth;
 // Models complex instances
 Model modelRock;
-Model modelAircraft;
-Model modelEclipseChasis;
-Model modelEclipseRearWheels;
-Model modelEclipseFrontalWheels;
-Model modelHeliChasis;
-Model modelHeliHeli;
-Model modelHeliHeliBack;
-Model modelLambo;
-Model modelLamboLeftDor;
-Model modelLamboRightDor;
-Model modelLamboFrontLeftWheel;
-Model modelLamboFrontRightWheel;
-Model modelLamboRearLeftWheel;
-Model modelLamboRearRightWheel;
-// Dart lego
-Model modelDartLegoBody;
-Model modelDartLegoHead;
-Model modelDartLegoMask;
-Model modelDartLegoLeftArm;
-Model modelDartLegoRightArm;
-Model modelDartLegoLeftHand;
-Model modelDartLegoRightHand;
-Model modelDartLegoLeftLeg;
-Model modelDartLegoRightLeg;
+Model modelTiendas1;
+Model modelTiendas2;
 
-// Buzz
-Model modelBuzzTorso;
-Model modelBuzzHead;
-Model modelBuzzLeftArm;
-Model modelBuzzLeftForeArm;
-Model modelBuzzLeftHand;
-// Lamps
-Model modelLamp1;
-Model modelLamp2;
-Model modelLampPost2;
 // Modelos animados
 // Mayow
 Model mayowModelAnimate;
-// Cowboy
-Model cowboyModelAnimate;
-// Guardian con lampara
-Model guardianModelAnimate;
-// Cybog
-Model cyborgModelAnimate;
-// Fountain
-Model modelFountain;
+
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap2.png");
 
@@ -182,51 +143,23 @@ glm::mat4 modelMatrixLambo = glm::mat4(1.0);
 glm::mat4 modelMatrixAircraft = glm::mat4(1.0);
 glm::mat4 modelMatrixDart = glm::mat4(1.0f);
 glm::mat4 modelMatrixBuzz = glm::mat4(1.0f);
-glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
 glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
+//Keep this matrixes
+glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
+glm::mat4 matrixModelTiendas1 = glm::mat4(1.0);
+glm::mat4 matrixModelTiendas2 = glm::mat4(1.0);
+
 int animationMayowIndex = 1;
-float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
-float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
 bool enableCountSelected = true;
 
-// Variables to animations keyframes
-bool saveFrame = false, availableSave = true;
-std::ofstream myfile;
-std::string fileName = "";
-bool record = false;
 
-// Joints interpolations Dart Lego
-std::vector<std::vector<float>> keyFramesDartJoints;
-std::vector<std::vector<glm::mat4>> keyFramesDart;
-int indexFrameDartJoints = 0;
-int indexFrameDartJointsNext = 1;
-float interpolationDartJoints = 0.0;
-int maxNumPasosDartJoints = 20;
-int numPasosDartJoints = 0;
-int indexFrameDart = 0;
-int indexFrameDartNext = 1;
-float interpolationDart = 0.0;
-int maxNumPasosDart = 200;
-int numPasosDart = 0;
 
-// Joints interpolations Buzz
-std::vector<std::vector<float>> keyFramesBuzzJoints;
-std::vector<std::vector<glm::mat4>> keyFramesBuzz;
-int indexFrameBuzzJoints = 0;
-int indexFrameBuzzJointsNext = 1;
-float interpolationBuzzJoints = 0.0;
-int maxNumPasosBuzzJoints = 20;
-int numPasosBuzzJoints = 0;
-int indexFrameBuzz = 0;
-int indexFrameBuzzNext = 1;
-float interpolationBuzz = 0.0;
-int maxNumPasosBuzz = 100;
-int numPasosBuzz = 0;
 
 // Var animate helicopter
 float rotHelHelY = 0.0;
@@ -435,6 +368,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	mayowModelAnimate.loadModel("../models/mayow/personaje2.fbx");
 	mayowModelAnimate.setShader(&shaderMulLighting);
 	
+	//Primeras tiendas, segmento más corto
+	modelTiendas1.loadModel("../Elementos_proyecto/Tiendas_menor/tiendas_menor.fbx");
+	modelTiendas1.setShader(&shaderMulLighting);
 
 
 	// Terreno
@@ -733,7 +669,7 @@ void destroy() {
 
 	// Basic objects Delete
 	boxCesped.destroy();
-
+	modelTiendas1.destroy();
 
 	// Custom objects Delete
 	mayowModelAnimate.destroy();
@@ -909,6 +845,8 @@ void prepareScene(){
 
 	terrain.setShader(&shaderTerrain);
 	
+	//Segmento corto de las tiendas
+	modelTiendas1.setShader(&shaderMulLighting);
 
 	//Mayow
 	mayowModelAnimate.setShader(&shaderMulLighting);
@@ -918,6 +856,9 @@ void prepareScene(){
 void prepareDepthScene(){
 
 	terrain.setShader(&shaderDepth);
+
+	//Segmento corto de las tiendas
+	modelTiendas1.setShader(&shaderDepth);
 
 	//Mayow
 	mayowModelAnimate.setShader(&shaderDepth);
@@ -953,10 +894,11 @@ void renderSolidScene(){
 	/*******************************************
 	 * Custom objects obj
 	 *******************************************/
-	//Rock render
-	matrixModelRock[3][1] = terrain.getHeightTerrain(matrixModelRock[3][0], matrixModelRock[3][2]);
-	modelRock.render(matrixModelRock);
 	// Forze to enable the unit texture to 0 always ----------------- IMPORTANT
+	//Render de tiendas
+	//matrixModelTiendas1[3][1] = terrain.getHeightTerrain(matrixModelTiendas1[3][0], matrixModelTiendas1[3][2]);
+	modelTiendas1.render(matrixModelTiendas1);
+
 	glActiveTexture(GL_TEXTURE0);
 
 
@@ -1054,7 +996,8 @@ void applicationLoop() {
 	float angleTarget;
 
 
-
+	matrixModelTiendas1 = glm::translate(matrixModelTiendas1, glm::vec3(23.0f, 2.0f, -5.0f));
+	matrixModelTiendas1 = glm::rotate(matrixModelTiendas1, glm::radians(-90.0f), glm::vec3(1,0,0));
 	modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(13.0f, 0.05f, -5.0f));
 	modelMatrixMayow = glm::rotate(modelMatrixMayow, glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
@@ -1315,6 +1258,21 @@ void applicationLoop() {
 		mayowCollider.e = mayowModelAnimate.getObb().e * glm::vec3(0.021, 0.021, 0.021) * glm::vec3(0.787401574, 0.787401574, 0.787401574);
 		mayowCollider.c = glm::vec3(modelmatrixColliderMayow[3]);
 		addOrUpdateColliders(collidersOBB, "mayow", mayowCollider, modelMatrixMayow);
+
+
+		// Collider de tiendas (parte menor)
+		glm::mat4 modelMatrixColliderTiendas1= glm::mat4(matrixModelTiendas1);
+		AbstractModel::OBB Tiendas1Collider;
+		// Set the orientation of collider before doing the scale
+		Tiendas1Collider.u = glm::quat_cast(matrixModelTiendas1);
+		modelMatrixColliderTiendas1 = glm::scale(modelMatrixColliderTiendas1, glm::vec3(1.01));
+		modelMatrixColliderTiendas1 = glm::translate(modelMatrixColliderTiendas1, 
+						glm::vec3(modelTiendas1.getObb().c.x,
+						modelTiendas1.getObb().c.y,
+						modelTiendas1.getObb().c.z));
+		Tiendas1Collider.c = glm::vec3(modelMatrixColliderTiendas1[3]);
+		Tiendas1Collider.e = modelTiendas1.getObb().e * glm::vec3(1.0);
+		addOrUpdateColliders(collidersOBB, "tiendas1", Tiendas1Collider, matrixModelTiendas1);
 
 		/*******************************************
 		 * Render de colliders
